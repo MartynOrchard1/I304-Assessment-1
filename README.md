@@ -4,7 +4,7 @@
 ## How to run
 ```bash
 `pip install -r prereqs.txt`
-**or individually:**
+or individually:
 `pip install pandas numpy matplotlib scikit-learn scipy yfinance`
 python Task1.py - Runs Task 1
 python Task2.py - Runs Task 2
