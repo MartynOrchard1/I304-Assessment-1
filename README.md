@@ -6,8 +6,8 @@
 pip install -r requirements.txt
 or individually:
 pip install pandas numpy matplotlib scikit-learn scipy yfinance
-python Task1.py
-python Task2.py
-python Task3.py
-python Task4.py
+python Task1.py - Runs Task 1
+python Task2.py - Runs Task 2
+python Task3.py - Runs Task 3
+python Task4.py - Runs Task 4
 ```
