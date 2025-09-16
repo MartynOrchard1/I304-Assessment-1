@@ -26,22 +26,17 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 
-# =========================
 # Config
-# =========================
 CSV_PATH = "data/CC_GENERAL.csv"        # <- adjust if needed
 ID_GUESS_TOKENS = ("id", "cust", "customer")
 
-# Optional: choose a pair of ORIGINAL numeric columns to plot per-k.
 # If either is missing, the script will auto-pick the 2 highest-variance numeric features.
 FEATURE_PAIR = ("BALANCE", "PURCHASES")  # e.g. ("BALANCE","PURCHASES") or None to always auto-pick
 
 os.makedirs("figures", exist_ok=True)
 os.makedirs("outputs", exist_ok=True)
 
-# =========================
 # Load
-# =========================
 if not os.path.exists(CSV_PATH):
     raise FileNotFoundError(f"Could not find {CSV_PATH}. Put the CSV in ./data or update CSV_PATH.")
 
@@ -49,9 +44,7 @@ df_raw = pd.read_csv(CSV_PATH)
 print("Loaded shape:", df_raw.shape)
 print("Columns:", list(df_raw.columns))
 
-# =========================
 # Identify ID column (if present) & keep numeric features
-# =========================
 df = df_raw.copy()
 
 id_col = None
@@ -81,9 +74,7 @@ if degenerate:
     print("Dropping zero-variance columns:", degenerate)
     num_df = num_df.drop(columns=degenerate)
 
-# =========================
 # Impute & Scale
-# =========================
 imputer = SimpleImputer(strategy="median")
 scaler = StandardScaler()
 
@@ -95,9 +86,7 @@ print("Final feature matrix shape:", X.shape)
 # Keep a DataFrame of imputed numeric features for plotting by original columns
 num_imputed_df = pd.DataFrame(X_imputed, columns=num_df.columns).reset_index(drop=True)
 
-# =========================
 # Decide which original pair to plot
-# =========================
 def pick_feature_pair(df_num, preferred_pair):
     cols = list(df_num.columns)
     if preferred_pair:
@@ -113,9 +102,7 @@ def pick_feature_pair(df_num, preferred_pair):
 feat_x, feat_y = pick_feature_pair(num_imputed_df, FEATURE_PAIR)
 print(f"Original-feature plot pair: ({feat_x}, {feat_y})")
 
-# =========================
 # PCA (fit once for consistent projections across k)
-# =========================
 pca = PCA(n_components=2, random_state=42)
 X_pca = pca.fit_transform(X)
 
@@ -147,9 +134,7 @@ def plot_cluster_scatter_orig(df_num_imputed, labels, fx, fy, title, outpath):
     plt.savefig(outpath, dpi=150)
     plt.close()
 
-# =========================
 # K sweep (k = 3 .. 15) — save ONLY cluster plots (PCA & orig-pair) for each k
-# =========================
 ks = list(range(3, 16))
 metrics_rows = []
 
@@ -207,9 +192,7 @@ if best_k is None:
 
 print(f"\nChosen best k: {best_k}")
 
-# =========================
 # Final fit and highlighted cluster plots for best_k
-# =========================
 kmeans = KMeans(n_clusters=best_k, n_init=20, random_state=42)
 labels = kmeans.fit_predict(X)
 

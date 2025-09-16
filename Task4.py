@@ -23,8 +23,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, ConfusionMatrixDisplay
 
 
-# Action I: Dataset summary
-
+# Action 1: Dataset summary
 """
 Wine dataset (UCI):
 - 178 samples
@@ -34,8 +33,7 @@ Link: https://archive.ics.uci.edu/ml/machine-learning-databases/wine/
 """
 
 
-# Action II: Load data
-
+# Action 2: Load data
 url = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data"
 
 # According to UCI, first column is class label, remaining 13 are features
@@ -46,13 +44,10 @@ columns = [
 ]
 
 df = pd.read_csv(url, header=None, names=columns)
-
 X = df.drop(columns=["class"])
 y = df["class"]
 
-
-# Action III: PCA (n=2)
-
+# Action 3: PCA (n=2)
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
@@ -62,9 +57,7 @@ X_pca = pca.fit_transform(X_scaled)
 print("[INFO] PCA explained variance ratios:", pca.explained_variance_ratio_)
 print("[INFO] Total variance explained by 2 components:", sum(pca.explained_variance_ratio_))
 
-
-# Action IV: Logistic Regression on PCA features
-
+# Action 4: Logistic Regression on PCA features
 X_train, X_test, y_train, y_test = train_test_split(X_pca, y, test_size=0.3, random_state=42, stratify=y)
 
 logreg = LogisticRegression(max_iter=1000, multi_class="auto")
@@ -82,9 +75,7 @@ plt.tight_layout()
 plt.savefig("figures/task4_logreg_confusion_matrix.png", dpi=150)
 plt.show()
 
-
-# Action V: Scatter plot
-
+# Action 5: Scatter plot
 plt.figure(figsize=(7,6))
 scatter = plt.scatter(X_pca[:,0], X_pca[:,1], c=y, cmap="viridis", edgecolor="k", s=60)
 plt.xlabel("Principal Component 1")
@@ -114,7 +105,6 @@ axes[1].set_ylabel("Principal Component 2")
 
 # Shared legend
 fig.legend(handles=scatter1.legend_elements()[0], labels=["Class 1","Class 2","Class 3"], loc="lower center", ncol=3)
-
 plt.tight_layout(rect=[0,0.05,1,1])
 plt.savefig("figures/task4_pca_true_vs_predicted.png", dpi=150)
 plt.show()
