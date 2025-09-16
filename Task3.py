@@ -79,7 +79,7 @@ disp_logreg = ConfusionMatrixDisplay(confusion_matrix=cm_logreg,
 disp_logreg.plot()
 plt.title("Logistic Regression Confusion Matrix")
 plt.tight_layout()
-plt.savefig("figures/task3_logreg_confusion_matrix.png", dpi=150)
+plt.savefig("figures/task03_logreg_confusion_matrix.png", dpi=150)
 plt.show()
 
 # Confusion matrix for KNN
@@ -89,7 +89,7 @@ disp_knn = ConfusionMatrixDisplay(confusion_matrix=cm_knn,
 disp_knn.plot()
 plt.title("KNN Confusion Matrix")
 plt.tight_layout()
-plt.savefig("figures/task3_knn_confusion_matrix.png", dpi=150)
+plt.savefig("figures/task03_knn_confusion_matrix.png", dpi=150)
 plt.show()
 
 # Bar plot comparing accuracies
@@ -99,7 +99,7 @@ plt.ylabel("Accuracy")
 plt.title("Model Accuracy Comparison")
 plt.ylim(0.9, 1.0)
 plt.tight_layout()
-plt.savefig("figures/task3_accuracy_comparison.png", dpi=150)
+plt.savefig("figures/task03_accuracy_comparison.png", dpi=150)
 plt.show()
 
 # Precision, Recall, F1 comparison
@@ -131,6 +131,6 @@ plt.title("Precision, Recall, and F1-score Comparison")
 plt.ylabel("Score")
 plt.ylim(0.8, 1.0)  # zoom in to highlight differences
 plt.tight_layout()
-plt.savefig("figures/task3_precision_recall_f1_comparison.png", dpi=150)
+plt.savefig("figures/task03_precision_recall_f1_comparison.png", dpi=150)
 plt.show()
 

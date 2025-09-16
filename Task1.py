@@ -125,7 +125,7 @@ plt.title(f"{TICKER}: Open vs Close")
 plt.xlabel("Open")
 plt.ylabel("Close")
 plt.tight_layout()
-plt.savefig(f"figures/{TICKER}_open_vs_close.png", dpi=150)
+plt.savefig(f"figures/task01_{TICKER}_open_vs_close.png", dpi=150)
 plt.show()
 
 
@@ -150,7 +150,7 @@ ensure_series(corrs).plot(kind="bar")
 plt.title(f"{TICKER}: Feature correlation with Close")
 plt.ylabel("Pearson r")
 plt.tight_layout()
-plt.savefig(f"figures/{TICKER}_feature_corrs.png", dpi=150)
+plt.savefig(f"figures/task01_{TICKER}_feature_corrs.png", dpi=150)
 plt.show()
 
 # 5) Train/Test & Fit (70/30)
@@ -195,7 +195,7 @@ plt.title(f"{TICKER}: Predicted vs Actual (Test Set)")
 plt.xlabel("Actual Close")
 plt.ylabel("Predicted Close")
 plt.tight_layout()
-plt.savefig(f"figures/{TICKER}_pred_vs_actual_test.png", dpi=150)
+plt.savefig(f"figures/task01_{TICKER}_pred_vs_actual_test.png", dpi=150)
 plt.show()
 
 # 6) Predict 3 imaginary rows

@@ -61,7 +61,7 @@ os.makedirs("figures", exist_ok=True)
 disp = ConfusionMatrixDisplay.from_estimator(logreg, X_test, y_test, display_labels=["Class 1","Class 2","Class 3"])
 plt.title("Task 4 – Logistic Regression Confusion Matrix (PCA features)")
 plt.tight_layout()
-plt.savefig("figures/task4_logreg_confusion_matrix.png", dpi=150)
+plt.savefig("figures/task04_logreg_confusion_matrix.png", dpi=150)
 plt.show()
 
 # Action 5: Scatter plot
@@ -72,7 +72,7 @@ plt.ylabel("Principal Component 2")
 plt.title("Task 4 – PCA Projection (Wine Dataset)")
 plt.legend(handles=scatter.legend_elements()[0], labels=["Class 1","Class 2","Class 3"])
 plt.tight_layout()
-plt.savefig("figures/task4_pca_scatter.png", dpi=150)
+plt.savefig("figures/task04_pca_scatter.png", dpi=150)
 plt.show()
 
 
@@ -95,5 +95,5 @@ axes[1].set_ylabel("Principal Component 2")
 # Shared legend
 fig.legend(handles=scatter1.legend_elements()[0], labels=["Class 1","Class 2","Class 3"], loc="lower center", ncol=3)
 plt.tight_layout(rect=[0,0.05,1,1])
-plt.savefig("figures/task4_pca_true_vs_predicted.png", dpi=150)
+plt.savefig("figures/task04_pca_true_vs_predicted.png", dpi=150)
 plt.show()
