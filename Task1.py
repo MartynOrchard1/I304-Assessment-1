@@ -1,7 +1,4 @@
-# task01_linear_regression.py
 # I304 – Assessment 1 (Task 01: Linear Regression with Yahoo Finance)
-# Python 3.11+ / pandas 2.x / scikit-learn 1.x
-# Run: python task01_linear_regression.py
 
 import os
 import warnings
@@ -17,20 +14,13 @@ from sklearn.metrics import r2_score
 
 import yfinance as yf
 
-
-# =========================
 # Config (edit if you like)
-# =========================
 TICKER  = "AAPL"   # e.g., "MSFT", "TSLA", "GOOG", "SPY"
 PERIOD  = "5y"     # "1y" | "5y" | "10y" | "max"
 INTERVAL = "1d"    # "1d" | "1wk" | "1mo"
-
 os.makedirs("figures", exist_ok=True)
 
-
-# =========================
 # Helpers
-# =========================
 def flatten_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Flatten MultiIndex columns, drop duplicates (keep first), force str names."""
     if isinstance(df.columns, pd.MultiIndex):
@@ -74,10 +64,7 @@ def ensure_series(obj) -> pd.Series:
     # fall back
     return pd.Series(obj)
 
-
-# =========================
 # 1) Download & sanitize
-# =========================
 print(f"Downloading {TICKER} history ({PERIOD}, {INTERVAL}) …")
 df = yf.download(TICKER, period=PERIOD, interval=INTERVAL, auto_adjust=False)
 
@@ -107,9 +94,8 @@ LOW_COL    = resolve_col(df, "Low")
 CLOSE_COL  = resolve_col(df, "Close")
 VOLUME_COL = resolve_col(df, "Volume")
 
-# =========================
+
 # 2) Feature engineering
-# =========================
 df = df.dropna().copy()
 
 # Moving averages of Close (avoid Adj Close to prevent leakage)
@@ -132,10 +118,7 @@ y = y.loc[mask]
 print("\nUsing features:", feature_cols_resolved, "| Target:", CLOSE_COL)
 print("X shape:", X.shape, "y shape:", y.shape)
 
-
-# =========================
 # 3) Plot: Open vs Close
-# =========================
 plt.figure(figsize=(7, 5))
 plt.scatter(df.loc[mask, OPEN_COL], y, s=10, alpha=0.6)
 plt.title(f"{TICKER}: Open vs Close")
@@ -146,9 +129,8 @@ plt.savefig(f"figures/{TICKER}_open_vs_close.png", dpi=150)
 plt.show()
 
 
-# =========================
+
 # 4) Correlations vs Close
-# =========================
 corr_matrix = df.loc[mask, feature_cols_resolved + [CLOSE_COL]].corr(numeric_only=True)
 
 # Force to Series to avoid pandas version quirks
@@ -171,10 +153,7 @@ plt.tight_layout()
 plt.savefig(f"figures/{TICKER}_feature_corrs.png", dpi=150)
 plt.show()
 
-
-# =========================
 # 5) Train/Test & Fit (70/30)
-# =========================
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.30, random_state=42, shuffle=True
 )
@@ -219,11 +198,7 @@ plt.tight_layout()
 plt.savefig(f"figures/{TICKER}_pred_vs_actual_test.png", dpi=150)
 plt.show()
 
-
-# =========================
 # 6) Predict 3 imaginary rows
-#    Use 10th/50th/90th percentiles of X
-# =========================
 quantiles = X.quantile([0.10, 0.50, 0.90])
 imaginary = pd.DataFrame(
     [quantiles.loc[0.10], quantiles.loc[0.50], quantiles.loc[0.90]],
@@ -237,9 +212,8 @@ for idx, pred in zip(imaginary.index, imaginary_predictions):
 print("\nImaginary rows used:\n", imaginary)
 
 
-# =========================
+
 # 7) Refit with fit_intercept=False on FULL X
-# =========================
 linreg_no_intercept = LinearRegression(fit_intercept=False)
 linreg_no_intercept.fit(X, y)
 coefs_no_int = pd.Series(np.asarray(linreg_no_intercept.coef_).ravel(), index=feature_names)
