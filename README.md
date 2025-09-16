@@ -9,8 +9,8 @@ Clone this link: `git clone https://github.com/MartynOrchard1/I304-Assessment-1.
 ![Download Zip](image.png)
 
 ### Step 2: Install pre requisites
-`pip install -r prereqs.txt`
-or individually:
+`pip install -r prereqs.txt` <br>
+or individually: <br>
 `pip install pandas numpy matplotlib scikit-learn scipy yfinance`
 
 ### Step 3: Run 
