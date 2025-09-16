@@ -153,6 +153,11 @@ corr_matrix = df.loc[mask, feature_cols_resolved + [CLOSE_COL]].corr(numeric_onl
 
 # Force to Series to avoid pandas version quirks
 corrs = ensure_series(corr_matrix.loc[:, CLOSE_COL]).drop(labels=[CLOSE_COL], errors="ignore")
+
+# Drop Volume_AAPL if present
+corrs = corrs.drop(labels=["Volume_AAPL"], errors="ignore")
+
+# Sort remaing features
 corrs = corrs.sort_values(ascending=False)
 
 print("\nCorrelation with Close:")
