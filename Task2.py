@@ -1,6 +1,10 @@
 # task02_clustering.py
 # I304 – Assessment 1 (Task 02: K-Means Clustering – Credit Card dataset)
 # Run: python task02_clustering.py
+#
+# This version ensures ALL figures are cluster scatter plots (no elbow/metric line charts).
+# We still compute metrics (silhouette, CH, DBI) for reporting (printed + CSV), but only
+# save PCA 2D scatter plots colored by cluster for each k.
 
 import os
 import warnings
@@ -14,18 +18,20 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
-
+from sklearn.metrics import (
+    silhouette_score,
+    calinski_harabasz_score,
+    davies_bouldin_score,
+)
 
 # =========================
 # Config
 # =========================
-CSV_PATH = "data/CC_GENERAL.csv"   # <- change if your filename differs
-ID_GUESS_TOKENS = ("id", "cust", "customer")  # used to auto-detect an ID column
+CSV_PATH = "data/CC_GENERAL.csv"   # <- adjust if needed
+ID_GUESS_TOKENS = ("id", "cust", "customer")  # guess an ID-like column
 
 os.makedirs("figures", exist_ok=True)
 os.makedirs("outputs", exist_ok=True)
-
 
 # =========================
 # Load
@@ -40,11 +46,11 @@ print("Loaded shape:", df_raw.shape)
 print("Columns:", list(df_raw.columns))
 
 # =========================
-# Identify ID column (if present) & keep only numeric features
+# Identify ID column (if any) & numeric-only feature set
 # =========================
 df = df_raw.copy()
 
-# Try common ID variants first
+# Try common ID variants
 id_col = None
 for c in df.columns:
     cl = str(c).lower()
@@ -52,7 +58,7 @@ for c in df.columns:
         id_col = c
         break
 
-# Secondary heuristic: object dtype columns with unique count ~ nrows often are IDs
+# Secondary heuristic: object columns with nearly-unique values
 if id_col is None:
     obj_like = [c for c in df.columns if df[c].dtype == "object"]
     for c in obj_like:
@@ -60,17 +66,14 @@ if id_col is None:
             id_col = c
             break
 
-if id_col:
-    print(f"Detected ID column: {id_col}")
-else:
-    print("No ID column detected (that’s fine).")
+print(f"Detected ID column: {id_col}" if id_col else "No ID column detected (that’s fine).")
 
-# Keep numeric columns only (KMeans requires numeric)
+# Keep numeric columns only
 num_df = df.select_dtypes(include=[np.number]).copy()
 if num_df.empty:
     raise RuntimeError("No numeric columns found for clustering.")
 
-# Drop obvious degenerate columns (zero variance)
+# Drop zero-variance columns
 nunique = num_df.nunique()
 degenerate = nunique[nunique <= 1].index.tolist()
 if degenerate:
@@ -89,88 +92,88 @@ X = scaler.fit_transform(X_imputed)
 print("Final feature matrix shape:", X.shape)
 
 # =========================
-# K sweep (k = 3 .. 15)
+# PCA (fit once for consistent projections across k)
+# =========================
+pca = PCA(n_components=2, random_state=42)
+X_pca = pca.fit_transform(X)
+
+# Helper for cluster scatter (PCA 2D)
+def plot_cluster_scatter(X2d, labels, title, outpath):
+    plt.figure(figsize=(7, 6))
+    # One chart, clusters as colours (default palette)
+    for c in np.unique(labels):
+        mask = labels == c
+        plt.scatter(X2d[mask, 0], X2d[mask, 1], s=14, alpha=0.8, label=f"Cluster {c}")
+    plt.title(title)
+    plt.xlabel("PC1")
+    plt.ylabel("PC2")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(outpath, dpi=150)
+    plt.close()
+
+# =========================
+# K sweep (k = 3 .. 15)  — ALL FIGURES ARE CLUSTER SCATTERS
 # =========================
 ks = list(range(3, 16))
-inertias = []
-sil_scores = []
-ch_scores = []
-dbi_scores = []
+metrics_rows = []
+
+best_k = None
+best_sil = -np.inf
 
 for k in ks:
     km = KMeans(n_clusters=k, n_init=20, random_state=42)
-    labels = km.fit_predict(X)
+    labels_k = km.fit_predict(X)
 
-    inertias.append(km.inertia_)
-    # Some metrics can error on pathological data; guard them
+    # Metrics (printed + saved as CSV later, but NOT plotted as lines)
     try:
-        sil_scores.append(silhouette_score(X, labels))
+        sil = silhouette_score(X, labels_k)
     except Exception:
-        sil_scores.append(np.nan)
+        sil = np.nan
     try:
-        ch_scores.append(calinski_harabasz_score(X, labels))
+        ch = calinski_harabasz_score(X, labels_k)
     except Exception:
-        ch_scores.append(np.nan)
+        ch = np.nan
     try:
-        dbi_scores.append(davies_bouldin_score(X, labels))
+        dbi = davies_bouldin_score(X, labels_k)
     except Exception:
-        dbi_scores.append(np.nan)
+        dbi = np.nan
+
+    metrics_rows.append(
+        {
+            "k": k,
+            "inertia": km.inertia_,
+            "silhouette": sil,
+            "calinski_harabasz": ch,
+            "davies_bouldin": dbi,
+        }
+    )
+
+    # Cluster scatter figure for this k (PCA 2D)
+    fig_path = f"figures/task02_kmeans_k{k:02d}_pca_clusters.png"
+    plot_cluster_scatter(X_pca, labels_k, f"KMeans clusters (k={k}) – PCA 2D", fig_path)
+    print(f"[FIG] Saved PCA cluster plot for k={k} -> {fig_path}")
+
+    # Track best by silhouette
+    if not np.isnan(sil) and sil > best_sil:
+        best_sil = sil
+        best_k = k
+
+# Save metrics table
+metrics_df = pd.DataFrame(metrics_rows).sort_values("k").reset_index(drop=True)
+metrics_path = "outputs/task02_kmeans_metrics.csv"
+metrics_df.to_csv(metrics_path, index=False)
+print(f"[CSV] Metrics saved -> {metrics_path}")
+
+# Fallback if silhouette was all NaN
+if best_k is None:
+    print("[WARN] All silhouette scores NaN; falling back to min DBI.")
+    best_k = int(metrics_df.loc[metrics_df["davies_bouldin"].idxmin(), "k"])
+
+print(f"\nChosen best k: {best_k} (by silhouette where available)")
 
 # =========================
-# Plots: Elbow + Metrics
-# =========================
-plt.figure(figsize=(7, 5))
-plt.plot(ks, inertias, marker="o")
-plt.title("KMeans: Elbow (Inertia vs k)")
-plt.xlabel("k (clusters)")
-plt.ylabel("Inertia (sum of squared distances)")
-plt.tight_layout()
-plt.savefig("figures/task02_elbow_inertia.png", dpi=150)
-plt.show()
-
-plt.figure(figsize=(7, 5))
-plt.plot(ks, sil_scores, marker="o")
-plt.title("KMeans: Silhouette Score vs k")
-plt.xlabel("k (clusters)")
-plt.ylabel("Silhouette (higher is better)")
-plt.tight_layout()
-plt.savefig("figures/task02_silhouette.png", dpi=150)
-plt.show()
-
-plt.figure(figsize=(7, 5))
-plt.plot(ks, ch_scores, marker="o")
-plt.title("KMeans: Calinski–Harabasz vs k")
-plt.xlabel("k (clusters)")
-plt.ylabel("CH Score (higher is better)")
-plt.tight_layout()
-plt.savefig("figures/task02_calinski_harabasz.png", dpi=150)
-plt.show()
-
-plt.figure(figsize=(7, 5))
-plt.plot(ks, dbi_scores, marker="o")
-plt.title("KMeans: Davies–Bouldin vs k")
-plt.xlabel("k (clusters)")
-plt.ylabel("DBI (lower is better)")
-plt.tight_layout()
-plt.savefig("figures/task02_davies_bouldin.png", dpi=150)
-plt.show()
-
-# =========================
-# Pick best k (max silhouette by default)
-# =========================
-sil_array = np.array(sil_scores, dtype=float)
-if np.all(np.isnan(sil_array)):
-    # fallback: choose k with minimum DBI
-    print("[WARN] All silhouette scores are NaN; falling back to min DBI.")
-    dbi_array = np.array(dbi_scores, dtype=float)
-    best_k = ks[int(np.nanargmin(dbi_array))]
-else:
-    best_k = ks[int(np.nanargmax(sil_array))]
-
-print(f"\nChosen best k (by silhouette): {best_k}")
-
-# =========================
-# Final fit and labeling
+# Final fit, labels, and highlighted cluster figure for best_k
 # =========================
 kmeans = KMeans(n_clusters=best_k, n_init=20, random_state=42)
 labels = kmeans.fit_predict(X)
@@ -178,7 +181,7 @@ labels = kmeans.fit_predict(X)
 df_clusters = df.copy()
 df_clusters["cluster"] = labels
 
-# Save a tidy summary of cluster means (on original numeric features)
+# Save per-cluster means for original numeric features (imputed, unscaled)
 cluster_summary = (
     pd.DataFrame(X_imputed, columns=num_df.columns)
     .assign(cluster=labels)
@@ -186,35 +189,23 @@ cluster_summary = (
     .mean()
     .sort_index()
 )
-cluster_summary.to_csv("outputs/task02_cluster_feature_means.csv", index=True)
-print("Cluster feature means saved to outputs/task02_cluster_feature_means.csv")
+summary_path = "outputs/task02_cluster_feature_means.csv"
+cluster_summary.to_csv(summary_path, index=True)
+print(f"[CSV] Cluster feature means saved -> {summary_path}")
+
+# Highlighted PCA scatter for best_k
+best_fig_path = f"figures/task02_kmeans_bestk{best_k:02d}_pca_clusters.png"
+plot_cluster_scatter(X_pca, labels, f"KMeans clusters (k={best_k}) – PCA 2D [Best k]", best_fig_path)
+print(f"[FIG] Saved BEST-K PCA cluster plot -> {best_fig_path}")
 
 # =========================
-# PCA (2D) for visualization
-# =========================
-pca = PCA(n_components=2, random_state=42)
-X_pca = pca.fit_transform(X)
-
-plt.figure(figsize=(7, 6))
-for c in range(best_k):
-    mask = labels == c
-    plt.scatter(X_pca[mask, 0], X_pca[mask, 1], s=12, alpha=0.7, label=f"Cluster {c}")
-plt.title(f"KMeans Clusters (k={best_k}) – PCA 2D")
-plt.xlabel("PC1")
-plt.ylabel("PC2")
-plt.legend()
-plt.tight_layout()
-plt.savefig("figures/task02_pca_clusters.png", dpi=150)
-plt.show()
-
-# =========================
-# Export labeled data (optional, helpful for marking)
+# Export labeled data (optional, helps marking)
 # =========================
 out_df = df_clusters.copy()
-# Keep ID if found, plus cluster
 cols_to_keep = [id_col] if id_col else []
 cols_to_keep += ["cluster"]
-out_df[cols_to_keep].to_csv("outputs/task02_cluster_assignments.csv", index=False)
-print("Cluster assignments saved to outputs/task02_cluster_assignments.csv")
+assign_path = "outputs/task02_cluster_assignments.csv"
+out_df[cols_to_keep].to_csv(assign_path, index=False)
+print(f"[CSV] Cluster assignments saved -> {assign_path}")
 
-print("\nDone. See figures/ for charts and outputs/ for CSV summaries.")
+print("\nDone. All figures are cluster scatter plots (see figures/).")
