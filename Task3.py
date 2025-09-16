@@ -1,94 +1,141 @@
-# Part C – Clustering on heart.csv
-# --------------------------------------------------------------
-# Run with:
-#   pip install pandas numpy matplotlib scikit-learn
+# Task 3 – Breast Cancer Wisconsin (Original) — Classification
+# ------------------------------------------------------------
+# Pulls data from UCI, cleans it, scales features, trains Logistic Regression & KNN,
+# prints accuracies, and plots confusion matrices + accuracy comparison.
 #
-# Tasks:
-# - Read heart.csv
-# - Use first 13 columns as features (ignore 'num' classification column)
-# - Apply clustering:
-#     1) KMeans with n_clusters = 2, 3, 4
-#     2) MeanShift (lets it pick cluster count)
-# - Visualize clusters with scatter plots
+# All plots are saved to ./figures and also displayed.
 
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.cluster import KMeans, MeanShift
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import (
+    accuracy_score, classification_report,
+    confusion_matrix, ConfusionMatrixDisplay
+)
+from sklearn.metrics import classification_report
 
-# ======== CONFIG ========
-CSV_PATH = "heart.csv"           # same folder
-FEATURE_FOR_PLOTS = "trestbps"   # choose feature for x-axis
-FEATURE_FOR_PLOTS_Y = "thalch"   # choose feature for y-axis
-# ========================
 
-def main():
-    # 1) Load data
-    df = pd.read_csv(CSV_PATH)
+# Setup
+os.makedirs("figures", exist_ok=True)
+url = (
+    "https://archive.ics.uci.edu/ml/machine-learning-databases/"
+    "breast-cancer-wisconsin/breast-cancer-wisconsin.data"
+)
+columns = [
+    "id", "clump_thickness", "uniformity_cell_size", "uniformity_cell_shape",
+    "marginal_adhesion", "single_epithelial_cell_size", "bare_nuclei",
+    "bland_chromatin", "normal_nucleoli", "mitoses", "class"
+]
 
-    # Use first 13 columns as features (assignment spec)
-    X = df.iloc[:, :13].dropna().reset_index(drop=True)
+# -------------------------------------------------------------------------------
 
-    # Identify categorical vs numeric
-    categorical_cols = [c for c in X.columns if X[c].dtype == "O"]
-    numeric_cols = [c for c in X.columns if c not in categorical_cols]
+# Load & clean data
+df = pd.read_csv(url, names=columns)
+df.replace("?", np.nan, inplace=True)
+df.dropna(inplace=True)
+for col in df.columns:
+    df[col] = pd.to_numeric(df[col], errors="raise")
 
-    # Preprocessing: scale numeric + one-hot encode categoricals
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("num", StandardScaler(), numeric_cols),
-            ("cat", OneHotEncoder(drop="first", handle_unknown="ignore"), categorical_cols),
-        ],
-        remainder="drop",
-    )
+# Map classes: {2 -> 0 (Benign), 4 -> 1 (Malignant)}
+df["class"] = df["class"].map({2: 0, 4: 1}).astype(int)
+X = df.drop(columns=["id", "class"])
+y = df["class"]
 
-    X_proc = preprocessor.fit_transform(X)
 
-    print("[INFO] Data prepared for clustering")
-    print("  Samples:", X_proc.shape[0], "Features after encoding:", X_proc.shape[1])
+# Split & scale
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.27, random_state=42, stratify=y
+)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-    # Helper: plot scatter for 2 chosen features coloured by cluster labels
-    def scatter_clusters(x_feat, y_feat, labels, title):
-        x_vals = X[x_feat].astype(float).values
-        y_vals = X[y_feat].astype(float).values
-        plt.figure()
-        plt.scatter(x_vals, y_vals, c=labels)
-        plt.xlabel(x_feat)
-        plt.ylabel(y_feat)
-        plt.title(title)
-        plt.grid(True, linestyle="--", alpha=0.4)
-        plt.tight_layout()
-        plt.show()
+# Logistic Regression
+logreg = LogisticRegression(max_iter=1000, solver="liblinear")
+logreg.fit(X_train_scaled, y_train)
+y_pred_logreg = logreg.predict(X_test_scaled)
+acc_logreg = accuracy_score(y_test, y_pred_logreg)
+print(f"Logistic Regression Accuracy: {acc_logreg:.4f}")
+print("\n[LogReg] Classification report:\n",
+      classification_report(y_test, y_pred_logreg, target_names=["Benign","Malignant"]))
 
-    # -------------------------
-    # 1) KMeans (k=2,3,4)
-    # -------------------------
-    for k in [2, 3, 4]:
-        km = KMeans(n_clusters=k, n_init=10, random_state=42)
-        labels = km.fit_predict(X_proc)
+# KNN
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(X_train_scaled, y_train)
+y_pred_knn = knn.predict(X_test_scaled)
+acc_knn = accuracy_score(y_test, y_pred_knn)
+print(f"KNN Accuracy: {acc_knn:.4f}")
+print("\n[KNN] Classification report:\n",
+      classification_report(y_test, y_pred_knn, target_names=["Benign","Malignant"]))
 
-        print(f"\n[KMeans] k={k}")
-        print("Cluster sizes:", np.bincount(labels))
+print(f"\nLogistic Regression vs KNN: {acc_logreg:.4f} vs {acc_knn:.4f}")
 
-        scatter_clusters(FEATURE_FOR_PLOTS, FEATURE_FOR_PLOTS_Y,
-                         labels, f"KMeans Clusters (k={k})")
+# Graphs
+# Confusion matrix for Logistic Regression
+cm_logreg = confusion_matrix(y_test, y_pred_logreg, labels=[0, 1])
+disp_logreg = ConfusionMatrixDisplay(confusion_matrix=cm_logreg,
+                                     display_labels=["Benign", "Malignant"])
+disp_logreg.plot()
+plt.title("Logistic Regression Confusion Matrix")
+plt.tight_layout()
+plt.savefig("figures/task3_logreg_confusion_matrix.png", dpi=150)
+plt.show()
 
-    # -------------------------
-    # 2) MeanShift
-    # -------------------------
-    ms = MeanShift()
-    labels_ms = ms.fit_predict(X_proc)
+# Confusion matrix for KNN
+cm_knn = confusion_matrix(y_test, y_pred_knn, labels=[0, 1])
+disp_knn = ConfusionMatrixDisplay(confusion_matrix=cm_knn,
+                                  display_labels=["Benign", "Malignant"])
+disp_knn.plot()
+plt.title("KNN Confusion Matrix")
+plt.tight_layout()
+plt.savefig("figures/task3_knn_confusion_matrix.png", dpi=150)
+plt.show()
 
-    print("\n[MeanShift]")
-    print("Estimated clusters:", len(np.unique(labels_ms)))
-    print("Cluster sizes:", np.bincount(labels_ms))
+# Bar plot comparing accuracies
+plt.figure()
+plt.bar(["Logistic Regression", "KNN"], [acc_logreg, acc_knn])
+plt.ylabel("Accuracy")
+plt.title("Model Accuracy Comparison")
+plt.ylim(0.9, 1.0)
+plt.tight_layout()
+plt.savefig("figures/task3_accuracy_comparison.png", dpi=150)
+plt.show()
 
-    scatter_clusters(FEATURE_FOR_PLOTS, FEATURE_FOR_PLOTS_Y,
-                     labels_ms, "MeanShift Clusters")
+# Precision, Recall, F1 comparison
+from sklearn.metrics import precision_score, recall_score, f1_score
 
-if __name__ == "__main__":
-    main()
+# Logistic Regression metrics
+prec_log = precision_score(y_test, y_pred_logreg)
+rec_log = recall_score(y_test, y_pred_logreg)
+f1_log = f1_score(y_test, y_pred_logreg)
+
+# KNN metrics
+prec_knn = precision_score(y_test, y_pred_knn)
+rec_knn = recall_score(y_test, y_pred_knn)
+f1_knn = f1_score(y_test, y_pred_knn)
+
+# Organize into a DataFrame for easy plotting
+import pandas as pd
+metrics_df = pd.DataFrame({
+    "Logistic Regression": [prec_log, rec_log, f1_log],
+    "KNN": [prec_knn, rec_knn, f1_knn]
+}, index=["Precision", "Recall", "F1-score"])
+
+print("\nMetrics comparison (LogReg vs KNN):")
+print(metrics_df)
+
+# Bar plot
+metrics_df.plot(kind="bar")
+plt.title("Precision, Recall, and F1-score Comparison")
+plt.ylabel("Score")
+plt.ylim(0.8, 1.0)  # zoom in to highlight differences
+plt.tight_layout()
+plt.savefig("figures/task3_precision_recall_f1_comparison.png", dpi=150)
+plt.show()
+
