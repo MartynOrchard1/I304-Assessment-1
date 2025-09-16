@@ -1,15 +1,5 @@
 # Task 4 – Principal Component Analysis (PCA) with Wine dataset
-# --------------------------------------------------------------
-# Steps:
-# Action I: Briefly understand the dataset
-# Action II: Read & prepare data
-# Action III: Perform PCA (n_components=2)
-# Action IV: Classification with Logistic Regression
-# Action V: Scatter plot with colour-coded classes
-#
-# Run with:
-#   pip install pandas numpy scikit-learn matplotlib
-#   python task4_pca.py
+
 
 import os
 import pandas as pd
@@ -31,7 +21,6 @@ Wine dataset (UCI):
 - Target: 3 classes of wine (class 1, 2, 3)
 Link: https://archive.ics.uci.edu/ml/machine-learning-databases/wine/
 """
-
 
 # Action 2: Load data
 url = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data"

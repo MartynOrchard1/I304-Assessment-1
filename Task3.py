@@ -1,9 +1,4 @@
 # Task 3 – Breast Cancer Wisconsin (Original) — Classification
-# ------------------------------------------------------------
-# Pulls data from UCI, cleans it, scales features, trains Logistic Regression & KNN,
-# prints accuracies, and plots confusion matrices + accuracy comparison.
-#
-# All plots are saved to ./figures and also displayed.
 
 import os
 import pandas as pd

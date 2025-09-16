@@ -1,16 +1,4 @@
-# task02_clustering.py
-# I304 – Assessment 1 (Task 02: K-Means Clustering – Credit Card dataset)
-# Run: python task02_clustering.py
-#
-# All output figures are CLUSTER SCATTERS.
-# For each k (3..15) we save:
-#   - PCA 2D cluster scatter
-#   - Original feature-pair cluster scatter (configurable; auto-picks top-variance if not found)
-#
-# Also saves:
-#   - outputs/task02_kmeans_metrics.csv
-#   - outputs/task02_cluster_feature_means.csv
-#   - outputs/task02_cluster_assignments.csv
+# Task 02: K-Means Clustering – Credit Card dataset)
 
 import os
 import warnings
