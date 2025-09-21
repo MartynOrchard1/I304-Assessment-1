@@ -1,6 +1,4 @@
 # Task 4 – Principal Component Analysis (PCA) with Wine dataset
-
-
 import os
 import pandas as pd
 import numpy as np

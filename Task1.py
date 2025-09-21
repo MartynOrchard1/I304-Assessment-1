@@ -22,7 +22,6 @@ os.makedirs("figures", exist_ok=True)
 
 # Helpers
 def flatten_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Flatten MultiIndex columns, drop duplicates (keep first), force str names."""
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = [
             "_".join([str(x) for x in tup if x is not None]).strip()
@@ -34,11 +33,6 @@ def flatten_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def resolve_col(df: pd.DataFrame, target: str) -> str:
-    """
-    Resolve a price/volume column name robustly (case-insensitive).
-    Prefers exact case-insensitive match; otherwise finds a column
-    that contains the target token (e.g. 'Open' matches 'Open_AAPL').
-    """
     lower_map = {c.lower(): c for c in df.columns}
     t = target.lower()
     if t in lower_map:
@@ -54,14 +48,11 @@ def resolve_col(df: pd.DataFrame, target: str) -> str:
     raise RuntimeError(f"Required column '{target}' not found. Columns: {list(df.columns)}")
 
 def ensure_series(obj) -> pd.Series:
-    """Force a 1-D pandas Series."""
     if isinstance(obj, pd.Series):
         return obj
     if isinstance(obj, pd.DataFrame):
-        # If it's single-column DataFrame, squeeze to Series
         if obj.shape[1] == 1:
             return obj.squeeze(axis=1)
-    # fall back
     return pd.Series(obj)
 
 # 1) Download & sanitize

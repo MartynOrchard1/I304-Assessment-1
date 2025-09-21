@@ -66,8 +66,8 @@ if degenerate:
 imputer = SimpleImputer(strategy="median")
 scaler = StandardScaler()
 
-X_imputed = imputer.fit_transform(num_df)  # original scale (imputed) for orig-feature plots & summaries
-X = scaler.fit_transform(X_imputed)        # scaled for KMeans
+X_imputed = imputer.fit_transform(num_df)  
+X = scaler.fit_transform(X_imputed)        
 
 print("Final feature matrix shape:", X.shape)
 
